@@ -1,11 +1,10 @@
+import type MagicString from 'magic-string';
+import type { Node } from '../types';
+
 const BOUND_ARROW = '=>';
 const UNBOUND_ARROW = '->';
 
-/**
- * @param {Object} node
- * @param {MagicString} patcher
- */
-export default function convertBoundFunctionToUnboundFunction(node, patcher) {
+export default function convertBoundFunctionToUnboundFunction(node: Node, patcher: MagicString) {
   let source = patcher.original;
   let [ start, end ] = node.range;
   let offset = start;

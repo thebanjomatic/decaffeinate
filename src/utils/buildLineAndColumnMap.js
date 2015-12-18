@@ -5,10 +5,7 @@ const LF = 13; // \n
  * Maps between line/column pairs and offsets for the given source.
  */
 class LineAndColumnMap {
-  /**
-   * @param {string} source
-   */
-  constructor(source) {
+  constructor(source: string) {
     const offsets = [0];
 
     var line = 0;
@@ -43,12 +40,8 @@ class LineAndColumnMap {
 
   /**
    * Gets the absolute character offset for the position at line & column.
-   *
-   * @param {number} line
-   * @param {number} column
-   * @returns {?number}
    */
-  getOffset(line, column) {
+  getOffset(line: number, column: number): ?number {
     if (line + 1 >= this.offsets.length) {
       // Line out of bounds.
       return null;
@@ -67,11 +60,8 @@ class LineAndColumnMap {
 
   /**
    * Gets the line & column pair for an absolute character offset.
-   *
-   * @param {number} offset
-   * @returns {?number[]}
    */
-  getLocation(offset) {
+  getLocation(offset: number): ?Array<number> {
     if (offset < 0 || this.offsets[this.offsets.length - 1] < offset) {
       // Offset out of bounds.
       return null;
@@ -90,10 +80,7 @@ class LineAndColumnMap {
 
 /**
  * Builds a mapper between line/column pairs and offsets for the given source.
- *
- * @param {string} source
- * @returns {LineAndColumnMap}
  */
-export default function buildLineAndColumnMap(source) {
+export default function buildLineAndColumnMap(source: string): LineAndColumnMap {
   return new LineAndColumnMap(source);
 }

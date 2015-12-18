@@ -4,15 +4,13 @@ import getIndent from '../utils/getIndent';
 import indentNode from '../utils/indentNode';
 import isExpressionResultUsed from '../utils/isExpressionResultUsed';
 import trimmedNodeRange from '../utils/trimmedNodeRange';
+import type MagicString from 'magic-string';
+import type { Node } from '../types';
 
 /**
  * If the `for` loop is used as an expression we wrap it in an IIFE.
- *
- * @param {Object} node
- * @param {MagicString} patcher
- * @returns {boolean}
  */
-export default function convertLoopExpressionIntoIIFE(node, patcher) {
+export default function convertLoopExpressionIntoIIFE(node: Node, patcher: MagicString): boolean {
   if (!isExpressionResultUsed(node)) {
     return false;
   }
