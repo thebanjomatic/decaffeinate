@@ -19,17 +19,19 @@ export default class ObjectInitialiserPatcher extends NodePatcher {
     if (implicitObject) {
       this.insertAtStart('{');
     }
-    this.members.forEach((member, i, members) => {
-      member.patch();
-      if (i !== members.length - 1) {
-        if (!member.hasSourceTokenAfter(COMMA)) {
-          this.insert(member.after, ',');
-        }
-      }
-    });
+    this.patchMembers();
     if (implicitObject) {
       this.insertAtEnd('}');
     }
+  }
+
+  /**
+   * @private
+   */
+  findLeftBraceInsertionPoint() {
+    //let index = this.getProgramSourceTokens().lastIndexOfTokenMatchingPredicate(
+    //  token => token
+    //)
   }
 
   /**
@@ -50,10 +52,32 @@ export default class ObjectInitialiserPatcher extends NodePatcher {
     if (needsParentheses) {
       this.insertBefore('(');
     }
-    this.patchAsExpression();
+    let implicitObject = this.isImplicitObject();
+    if (implicitObject) {
+      this.insertAtStart('{\n');
+      this.indent();
+    }
+    this.patchMembers();
+    if (implicitObject) {
+      this.insertAtEnd('\n}');
+    }
     if (needsParentheses) {
       this.insertAfter(')');
     }
+  }
+
+  /**
+   * @private
+   */
+  patchMembers() {
+    this.members.forEach((member, i, members) => {
+      member.patch();
+      if (i !== members.length - 1) {
+        if (!member.hasSourceTokenAfter(COMMA)) {
+          this.insert(member.after, ',');
+        }
+      }
+    });
   }
 
   /**

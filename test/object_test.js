@@ -39,7 +39,7 @@ describe('objects', () => {
     `);
   });
 
-  it.skip('indents and loosely wraps multi-line objects if needed', () => {
+  it('indents and loosely wraps multi-line objects if needed', () => {
     check(`
       a: b,
       c: d
@@ -47,6 +47,21 @@ describe('objects', () => {
       ({
         a: b,
         c: d
+      });
+    `);
+  });
+
+  it('indents and loosely wraps multi-line indented objects if needed', () => {
+    check(`
+      ->
+        a: b,
+        c: d
+    `, `
+      (function() {
+        return {
+          a: b,
+          c: d
+        };
       });
     `);
   });
