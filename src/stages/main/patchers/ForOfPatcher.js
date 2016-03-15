@@ -1,5 +1,4 @@
 import ForPatcher from './ForPatcher.js';
-import IdentifierPatcher from './IdentifierPatcher.js';
 import ObjectInitialiserPatcher from './ObjectInitialiserPatcher.js';
 
 export default class ForOfPatcher extends ForPatcher {
@@ -7,21 +6,8 @@ export default class ForOfPatcher extends ForPatcher {
     let bodyLinesToPrepend = [];
     let { keyAssignee } = this;
 
-    let keyBinding = this.slice(keyAssignee.contentStart, keyAssignee.contentEnd);
-
-    // `for k of o` → `for (k of o`
-    //                     ^
     this.insert(keyAssignee.outerStart, '(');
-    keyAssignee.patch();
-
-    if (!(keyAssignee instanceof IdentifierPatcher)) {
-      let keyAssigneeString = keyBinding;
-      keyBinding = this.claimFreeBinding('key');
-      // `for ([f, s] of o` → `for (key of o`
-      //       ^^^^^^               ^^^
-      this.overwrite(keyAssignee.contentStart, keyAssignee.contentEnd, keyBinding);
-      bodyLinesToPrepend.push(`${keyAssigneeString} = ${keyBinding}`);
-    }
+    let keyBinding = this.getIndexBinding();
 
     let { valAssignee } = this;
 

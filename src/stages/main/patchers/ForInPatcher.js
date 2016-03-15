@@ -1,4 +1,3 @@
-import IdentifierPatcher from './IdentifierPatcher.js';
 import ForPatcher from './ForPatcher.js';
 import type BlockPatcher from './BlockPatcher.js';
 import type NodePatcher from './../../../patchers/NodePatcher.js';
