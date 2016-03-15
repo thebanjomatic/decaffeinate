@@ -1,12 +1,12 @@
 import check from './support/check.js';
 
-describe.skip('for loops', () => {
+describe.only('for loops', () => {
   it('transforms basic for-of loops into for-in', () => {
     check(`
       for k of o
         k
     `, `
-      for (var k in o) {
+      for (let k in o) {
         k;
       }
     `);
@@ -17,8 +17,8 @@ describe.skip('for loops', () => {
       for k, v of o
         k
     `, `
-      for (var k in o) {
-        var v = o[k];
+      for (let k in o) {
+        let v = o[k];
         k;
       }
     `);
@@ -29,48 +29,35 @@ describe.skip('for loops', () => {
       for k, v of object()
         k
     `, `
-      var iterable;
-      for (var k in (iterable = object())) {
-        var v = iterable[k];
+      let iterable;
+      for (let k in (iterable = object())) {
+        let v = iterable[k];
         k;
       }
     `);
   });
 
-  it('transforms for-of loops with destructured keys', () => {
+  it('transforms for-of loops with destructured value', () => {
     check(`
-      for {a, b} of o
-        a + b
+      for k, {x, y} of o
+        k + x
     `, `
-      for (var {a, b} in o) {
-        a + b;
+      for (let k in o) {
+        let {x, y} = o[k];
+        k + x;
       }
     `);
   });
 
-  it('transforms for-of loops with destructured keys and values', () => {
+  it('transforms for-of loops with destructured value plus unsafe-to-repeat target', () => {
     check(`
-      for {a, b}, {x, y} of o
-        a + x
+      for key, {x, y} of object()
+        key + x
     `, `
-      for (var key in o) {
-        var {a, b} = key;
-        var {x, y} = o[key];
-        a + x;
-      }
-    `);
-  });
-
-  it('transforms for-of loops with destructured keys and values plus unsafe-to-repeat target', () => {
-    check(`
-      for {a, b}, {x, y} of object()
-        a + x
-    `, `
-      var iterable;
-      for (var key in (iterable = object())) {
-        var {a, b} = key;
-        var {x, y} = iterable[key];
-        a + x;
+      let iterable;
+      for (let key in (iterable = object())) {
+        let {x, y} = iterable[key];
+        key + x;
       }
     `);
   });
@@ -80,30 +67,42 @@ describe.skip('for loops', () => {
       for a in b
         a
     `, `
-      for (var i = 0, a; i < b.length; i++) {
-        a = b[i];
+      for (let i = 0; i < b.length; i++) {
+        let a = b[i];
         a;
       }
     `);
   });
 
-  it.skip('gives `for` loops without an index an index', () => {
+  it('transforms for-in loops with an index to typical `for` loops', () => {
+    check(`
+      for a, j in b
+        a
+    `, `
+      for (let j = 0; j < b.length; j++) {
+        let a = b[j];
+        a;
+      }
+    `);
+  });
+
+  it('transforms `for` loops without an index', () => {
     check(`
       for [0..1]
         2
     `, `
-      for (var i = 0; i <= 1; i++) {
+      for (let i = 0; i <= 1; i++) {
         2;
       }
     `);
   });
 
-  it.skip('gives `for` loops without an index an index that does not collide with existing bindings', () => {
+  it('gives `for` loops without an index an index that does not collide with existing bindings', () => {
     check(`
       for [0..1]
         i
     `, `
-      for (var j = 0; j <= 1; j++) {
+      for (let j = 0; j <= 1; j++) {
         i;
       }
     `);
@@ -114,8 +113,8 @@ describe.skip('for loops', () => {
       for a in b by 2
         a
     `, `
-      for (var i = 0, a; i < b.length; i += 2) {
-        a = b[i];
+      for (let i = 0; i < b.length; i += 2) {
+        let a = b[i];
         a;
       }
     `);
@@ -126,8 +125,8 @@ describe.skip('for loops', () => {
       for a in b by -1
         a
     `, `
-      for (var i = b.length - 1, a; i >= 0; i--) {
-        a = b[i];
+      for (let i = b.length - 1; i >= 0; i--) {
+        let a = b[i];
         a;
       }
     `);
@@ -138,8 +137,8 @@ describe.skip('for loops', () => {
       for a in b by -2
         a
     `, `
-      for (var i = b.length - 1, a; i >= 0; i -= 2) {
-        a = b[i];
+      for (let i = b.length - 1; i >= 0; i -= 2) {
+        let a = b[i];
         a;
       }
     `);
@@ -150,8 +149,8 @@ describe.skip('for loops', () => {
       for a in b when a.c
         a
     `, `
-      for (var i = 0, a; i < b.length; i++) {
-        a = b[i];
+      for (let i = 0; i < b.length; i++) {
+        let a = b[i];
         if (a.c) {
           a;
         }
@@ -164,7 +163,7 @@ describe.skip('for loops', () => {
       for a in b by 2 when a.c
         a
     `, `
-      for (var i = 0, a; i < b.length; i += 2) {
+      for (let i = 0, a; i < b.length; i += 2) {
         a = b[i];
         if (a.c) {
           a;
@@ -178,8 +177,8 @@ describe.skip('for loops', () => {
       for e in list()
         break
     `, `
-      var iterable = list();
-      for (var i = 0, e; i < iterable.length; i++) {
+      let iterable = list();
+      for (let i = 0, e; i < iterable.length; i++) {
         e = iterable[i];
         break;
       }
@@ -191,7 +190,7 @@ describe.skip('for loops', () => {
       for i in [0..10]
         i
     `, `
-      for (var i = 0; i <= 10; i++) {
+      for (let i = 0; i <= 10; i++) {
         i;
       }
     `);
@@ -202,7 +201,7 @@ describe.skip('for loops', () => {
       for i in [0...10]
         i
     `, `
-      for (var i = 0; i < 10; i++) {
+      for (let i = 0; i < 10; i++) {
         i;
       }
     `);
@@ -213,7 +212,7 @@ describe.skip('for loops', () => {
       for i in [10..0]
         i
     `, `
-      for (var i = 10; i >= 0; i--) {
+      for (let i = 10; i >= 0; i--) {
         i;
       }
     `);
@@ -224,7 +223,7 @@ describe.skip('for loops', () => {
       for i in [10...0]
         i
     `, `
-      for (var i = 10; i > 0; i--) {
+      for (let i = 10; i > 0; i--) {
         i;
       }
     `);
@@ -235,7 +234,7 @@ describe.skip('for loops', () => {
       for i in [100..0] by -2
         i
     `, `
-      for (var i = 100; i >= 0; i -= 2) {
+      for (let i = 100; i >= 0; i -= 2) {
         i;
       }
     `);
@@ -246,7 +245,7 @@ describe.skip('for loops', () => {
       for i in [a..b]
         i
     `, `
-      for (var i = a; a < b ? i <= b : i >= b; a < b ? i++ : i--) {
+      for (let i = a; a < b ? i <= b : i >= b; a < b ? i++ : i--) {
         i;
       }
     `);
@@ -257,9 +256,9 @@ describe.skip('for loops', () => {
       for i in [a()..b()]
         i
     `, `
-      var start = a();
-      var end = b();
-      for (var i = start; start < end ? i <= end : i >= end; start < end ? i++ : i--) {
+      let start = a();
+      let end = b();
+      for (let i = start; start < end ? i <= end : i >= end; start < end ? i++ : i--) {
         i;
       }
     `);
@@ -269,7 +268,7 @@ describe.skip('for loops', () => {
     check(`
       k for k of o
     `, `
-      for (var k in o) {
+      for (let k in o) {
         k;
       }
     `);
@@ -279,7 +278,7 @@ describe.skip('for loops', () => {
     check(`
       e for e in l
     `, `
-      for (var i = 0, e; i < l.length; i++) {
+      for (let i = 0, e; i < l.length; i++) {
         e = l[i];
         e;
       }
@@ -291,8 +290,8 @@ describe.skip('for loops', () => {
       a(k for k of o)
     `, `
       a((() => {
-        var result = [];
-        for (var k in o) {
+        let result = [];
+        for (let k in o) {
           result.push(k);
         }
         return result;
@@ -305,8 +304,8 @@ describe.skip('for loops', () => {
       a(e for e in l)
     `, `
       a((() => {
-        var result = [];
-        for (var i = 0, e; i < l.length; i++) {
+        let result = [];
+        for (let i = 0, e; i < l.length; i++) {
           e = l[i];
           result.push(e);
         }
@@ -322,8 +321,8 @@ describe.skip('for loops', () => {
     `, `
       (function() {
         return (() => {
-          var result = [];
-          for (var i = 0, a; i < b.length; i++) {
+          let result = [];
+          for (let i = 0, a; i < b.length; i++) {
             a = b[i];
             result.push(a);
           }
@@ -345,8 +344,8 @@ describe.skip('for loops', () => {
     `, `
       (function() {
         return (() => {
-          var result = [];
-          for (var i = 0, a; i < b.length; i++) {
+          let result = [];
+          for (let i = 0, a; i < b.length; i++) {
             a = b[i];
             result.push((() => {
               if (a) {
@@ -369,9 +368,9 @@ describe.skip('for loops', () => {
         for c in d
           a + c
     `, `
-      for (var i = 0, a; i < b.length; i++) {
+      for (let i = 0, a; i < b.length; i++) {
         a = b[i];
-        for (var j = 0, c; j < d.length; j++) {
+        for (let j = 0, c; j < d.length; j++) {
           c = d[j];
           a + c;
         }
@@ -384,7 +383,7 @@ describe.skip('for loops', () => {
       for own key of list
         console.log key
     `, `
-      for (var key in list) {
+      for (let key in list) {
         if (Object.prototype.hasOwnProperty.call(list, key)) {
           console.log(key);
         }
@@ -397,8 +396,8 @@ describe.skip('for loops', () => {
       for own key of getList()
         console.log key
     `, `
-      var iterable;
-      for (var key in (iterable = getList())) {
+      let iterable;
+      for (let key in (iterable = getList())) {
         if (Object.prototype.hasOwnProperty.call(iterable, key)) {
           console.log(key);
         }
@@ -411,9 +410,9 @@ describe.skip('for loops', () => {
       for own key, value of list
         console.log key, value
     `, `
-      for (var key in list) {
+      for (let key in list) {
         if (Object.prototype.hasOwnProperty.call(list, key)) {
-          var value = list[key];
+          let value = list[key];
           console.log(key, value);
         }
       }
@@ -425,7 +424,7 @@ describe.skip('for loops', () => {
       for own key of list when key[0] is '_'
         console.log key
     `, `
-      for (var key in list) {
+      for (let key in list) {
         if (Object.prototype.hasOwnProperty.call(list, key)) {
           if (key[0] === '_') {
             console.log(key);
@@ -439,7 +438,7 @@ describe.skip('for loops', () => {
     check(`
       a for own a of b
     `, `
-      for (var a in b) {
+      for (let a in b) {
         if (Object.prototype.hasOwnProperty.call(b, a)) {
           a;
         }
@@ -454,7 +453,7 @@ describe.skip('for loops', () => {
           return a
     `, `
       (function() {
-        for (var i = 0, a; i < b.length; i++) {
+        for (let i = 0, a; i < b.length; i++) {
           a = b[i];
           return a;
         }
@@ -470,8 +469,8 @@ describe.skip('for loops', () => {
     `, `
       (function() {
         return (() => {
-          var result = [];
-          for (var i = 0, a; i < b.length; i++) {
+          let result = [];
+          for (let i = 0, a; i < b.length; i++) {
             a = b[i];
             result.push(function() { return a; });
           }
@@ -485,7 +484,7 @@ describe.skip('for loops', () => {
     check(`
       for a in b then a()
     `, `
-      for (var i = 0, a; i < b.length; i++) {
+      for (let i = 0, a; i < b.length; i++) {
         a = b[i];
         a();
       }
@@ -496,7 +495,7 @@ describe.skip('for loops', () => {
     check(`
       for k of o then k
     `, `
-      for (var k in o) {
+      for (let k in o) {
         k;
       }
     `);
@@ -507,7 +506,7 @@ describe.skip('for loops', () => {
       for a in b then do (a) ->
         a
     `, `
-      for (var i = 0, a; i < b.length; i++) {
+      for (let i = 0, a; i < b.length; i++) {
         a = b[i];
         (function(a) {
           return a;
