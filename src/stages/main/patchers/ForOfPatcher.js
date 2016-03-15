@@ -6,8 +6,8 @@ export default class ForOfPatcher extends ForPatcher {
     let bodyLinesToPrepend = [];
     let { keyAssignee } = this;
 
-    this.insert(keyAssignee.outerStart, '(');
     let keyBinding = this.getIndexBinding();
+    this.insert(keyAssignee.outerStart, '(');
 
     let { valAssignee } = this;
 

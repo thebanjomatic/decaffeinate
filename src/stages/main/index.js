@@ -204,6 +204,7 @@ export default class MainStage extends TransformCoffeeScriptStage {
       case 'Throw':
         return ThrowPatcher;
 
+      case 'UnaryNegateOp':
       case 'DeleteOp':
       case 'TypeofOp':
       case 'BitNotOp':

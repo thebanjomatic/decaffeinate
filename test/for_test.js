@@ -240,6 +240,17 @@ describe.only('for loops', () => {
     `);
   });
 
+  it('allows using an unsafe-to-repeat step value', () => {
+    check(`
+      for a in b by (c d)
+        a()
+    `, `
+      for (let i = 0, step = c(d); i < b.length; i += step) {
+        a();
+      }
+    `);
+  });
+
   it('special-cases variable for-in range loops to avoid creating arrays', () => {
     check(`
       for i in [a..b]

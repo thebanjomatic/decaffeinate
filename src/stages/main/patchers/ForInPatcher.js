@@ -17,25 +17,117 @@ export default class ForInPatcher extends ForPatcher {
   }
 
   patchAsStatement() {
-    let { valAssignee } = this;
+    // Run for the side-effect of patching and slicing the value.
+    this.getValueBinding();
 
-    let valBinding = this.slice(valAssignee.contentStart, valAssignee.contentEnd);
+    this.patchForLoopHeader();
+    this.patchForLoopBody();
+  }
 
-    let indexBinding = this.getIndexBinding();
+  getValueBinding(): string {
+    if (!this._valueBinding) {
+      let { valAssignee } = this;
+      valAssignee.patch();
+      this._valueBinding = this.slice(valAssignee.contentStart, valAssignee.contentEnd);
+    }
+    return this._valueBinding;
+  }
 
-    this.target.patch();
-    let targetAgain = this.target.makeRepeatable(true, 'iterable');
-
-    this.insert(valAssignee.outerStart, '(');
+  patchForLoopHeader() {
+    let firstHeaderPatcher = this.valAssignee;
+    let lastHeaderPatcher = this.step || this.filter || this.target;
     this.overwrite(
-      valAssignee.outerStart,
-      this.target.outerEnd,
-      `${indexBinding} = 0; ${indexBinding} < ${targetAgain}.length; ${indexBinding}++`
+      firstHeaderPatcher.outerStart,
+      lastHeaderPatcher.outerEnd,
+      `(${this.getInitCode()}; ${this.getTestCode()}; ${this.getUpdateCode()}) {`
     );
+  }
 
-    this.insert(this.target.outerEnd, ') {');
-
-    this.body.insertLinesAtIndex([`${valBinding} = ${targetAgain}[${indexBinding}]`], 0);
+  patchForLoopBody() {
+    this.body.insertLinesAtIndex([
+      `${this.getValueBinding()} = ${this.getTargetReference()}[${this.getIndexBinding()}]`
+    ], 0);
     this.body.patch({ leftBrace: false });
+  }
+
+  getInitCode(): string {
+    let result = `${this.getIndexBinding()} = 0`;
+    if (this.step && !this.step.isRepeatable()) {
+      result += `, ${this.claimFreeBinding('step')} = ${this.getStep()}`;
+    }
+    return result;
+  }
+
+  getTestCode(): string {
+    return `${this.getIndexBinding()} < ${this.getTargetReference()}.length`;
+  }
+
+  getTargetReference(): string {
+    if (!this._targetReference) {
+      this.target.patch();
+      if (this.target.isRepeatable()) {
+        this._targetReference = this.slice(this.target.contentStart, this.target.contentEnd);
+      } else {
+        this._targetReference = this.claimFreeBinding('iterable');
+      }
+    }
+    return this._targetReference;
+  }
+
+  getUpdateCode(): string {
+    let indexBinding = this.getIndexBinding();
+    let step = this.getStep();
+    if (step.number === 1) {
+      return `${indexBinding}${step.negated ? '--' : '++'}`;
+    } else if (step.number === null) {
+      return `${indexBinding} += ${step}`;
+    } else if (step.negated) {
+      return `${indexBinding} -= ${step.number}`;
+    } else {
+      return `${indexBinding} += ${step.number}`;
+    }
+  }
+
+  getStep(): Step {
+    if (this._step === undefined) {
+      this._step = new Step(this.step);
+    }
+    return this._step;
+  }
+}
+
+class Step {
+  negated: boolean;
+  value: string;
+  number: ?number;
+  raw: string;
+
+  constructor(patcher: ?NodePatcher) {
+    let negated = false;
+    let root = patcher;
+    let apply = (patcher: NodePatcher) => {
+      if (patcher.node.type === 'UnaryNegateOp') {
+        negated = !negated;
+        apply(patcher.expression);
+      } else {
+        root = patcher;
+      }
+    };
+    if (patcher) { apply(patcher); }
+    let value = root ? root.slice(root.contentStart, root.contentEnd) : '1';
+    let number =
+      !root ?
+        1 :
+      root.node.type === 'Int' || root.node.type === 'Float' ?
+        root.node.data :
+      null;
+    this.negated = negated;
+    this.value = value;
+    this.number = number;
+    this.raw = `${negated ? '-' : ''}${value}`;
+  }
+
+  toString(): string {
+    return this.raw;
   }
 }
